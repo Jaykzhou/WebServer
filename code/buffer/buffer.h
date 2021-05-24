@@ -46,6 +46,7 @@ private:
     void MakeSpace_(size_t len);
 
     std::vector<char> buffer_;
+    //c++11中的原子变量，防止多线程产生冲突
     std::atomic<std::size_t> readPos_;
     std::atomic<std::size_t> writePos_;
 };
