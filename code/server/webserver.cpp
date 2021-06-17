@@ -43,6 +43,13 @@ WebServer::WebServer(
             }
         }
 
+WebServer::~WebServer() {
+    close(listenFd_);
+    isClose_ = true;
+    free(srcDir_);
+    SqlConnPool::Instance()->ClosePool();
+}
+
 void WebServer::InitEventMode_(int trigMode) {
     listenEvent_ = EPOLLHUP;
     connEvent_ = EPOLLONESHOT | EPOLLHUP;
@@ -132,9 +139,9 @@ void WebServer::AddClient_(int fd, sockaddr_in addr) {
     assert(fd > 0);
     users_[fd].init(fd, addr);
     if(timeoutMs_ > 0){
-        timer_->add(fd, timeoutMs_, std::bind(&WebServer::CloseConn_, this, &users_[fd]))   //a2 parameter
+        timer_->add(fd, timeoutMs_, std::bind(&WebServer::CloseConn_, this, &users_[fd])) ;  //a2 parameter
     }
-    epoller_->AddFd(fd, EPPOLLIN | connEvent_);
+    epoller_->AddFd(fd, EPOLLIN | connEvent_);
     SetFdNonBlock(fd);
     LOG_INFO("Client[%d] in", users_[fd].GetFd());
 }

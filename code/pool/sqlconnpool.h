@@ -36,7 +36,7 @@ private:
 
     std::queue<MYSQL* > connQue_;
     std::mutex mtx_;
-    sem_t  semId;
+    sem_t  semId_;
 };
 
 #endif //WEBSERVER_SQLCONNPOOL_H

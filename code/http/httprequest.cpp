@@ -21,6 +21,48 @@ void HttpRequest::Init() {
     post_.clear();
 }
 
+//bool HttpRequest::IsKeepAlive() const {
+//    if(header_.count("Connection") == 1) {
+//        return header_.find("Connection")->second == "keep-alive" && version_ == "1.1";
+//    }
+//    return false;
+//}
+
+bool HttpRequest::parse(Buffer& buff) {
+    const char CRLF[] = "\r\n";
+    if(buff.ReadableBytes() <= 0) {
+        return false;
+    }
+    while(buff.ReadableBytes() && state_ != FINISH) {
+        const char* lineEnd = std::search(buff.Peek(), buff.BeginWriteConst(), CRLF, CRLF + 2);
+        std::string line(buff.Peek(), lineEnd);
+        switch(state_)
+        {
+            case REQUEST_LINE:
+                if(!ParseRequestLine_(line)) {
+                    return false;
+                }
+                ParsePath_();
+                break;
+            case HEADERS:
+                ParseHeader_(line);
+                if(buff.ReadableBytes() <= 2) {
+                    state_ = FINISH;
+                }
+                break;
+            case BODY:
+                ParseBody_(line);
+                break;
+            default:
+                break;
+        }
+        if(lineEnd == buff.BeginWrite()) { break; }
+        buff.RetrieveUntil(lineEnd + 2);
+    }
+    LOG_DEBUG("[%s], [%s], [%s]", method_.c_str(), path_.c_str(), version_.c_str());
+    return true;
+}
+
 bool HttpRequest::IsKeepAlive() const {
     if(header_.count("Connection") == 1){
         return header_.find("Connection")->second == "keep-alive" && version_ == "1.1";
@@ -53,12 +95,26 @@ void HttpRequest::ParseHeader_(const std::string &line) {
     }
 }
 
-void HttpRequest::ParesBody_(const std::string &line) {
+void HttpRequest::ParseBody_(const std::string &line) {
     body_ = line;
     //if the method_ == post
     ParsePost_();
     state_ = FINISH;
     LOG_DEBUG("Body : %s, len : %d", line.c_str(), line.size());
+}
+
+void HttpRequest::ParsePath_() {
+    if(path_ == "/") {
+        path_ = "/index.html";
+    }
+    else {
+        for(auto &item: DEFAULT_HTML) {
+            if(item == path_) {
+                path_ += ".html";
+                break;
+            }
+        }
+    }
 }
 
 void HttpRequest::ParsePost_() {
@@ -206,7 +262,7 @@ std::string  HttpRequest::path() const {
     return path_;
 }
 
-std::string& HttpRequest::path() const {
+std::string& HttpRequest::path(){
     return path_;
 }
 
@@ -214,12 +270,12 @@ std::string HttpRequest::method() const {
     return method_;
 }
 
-st::string HttpRequest::version() const {
+std::string HttpRequest::version() const {
     return version_;
 }
 
 std::string HttpRequest::GetPost(const char *key) const {
-    assert(key != "");
+    assert(key != nullptr);
     if(post_.count(key) == 1){
         return post_.find(key)->second;
     }
@@ -227,7 +283,7 @@ std::string HttpRequest::GetPost(const char *key) const {
 }
 
 std::string HttpRequest::GetPost(const std::string &key) const {
-    assert(key != nullptr);
+    assert(key != "");
     if (post_.count(key) == 1){
         return post_.find(key)->second;
     }

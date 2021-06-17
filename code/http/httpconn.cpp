@@ -52,7 +52,7 @@ const char* HttpConn::GetIP() const {
     return inet_ntoa(addr_.sin_addr);
 }
 
-int HttpConn::GetIP() const {
+int HttpConn::GetPort() const {
     return addr_.sin_port;
 }
 

@@ -43,7 +43,7 @@ const std::unordered_map<int, std::string> HttpResponse::CODE_PATH {
 HttpResponse::HttpResponse() {
     code_ = -1;
     path_ = srcDir_ = "";
-    isKeepAlive - false;
+    isKeepAlive_ = false;
     mmFile_ = nullptr;
     mmFileStat_ = { 0 };
 }
@@ -73,7 +73,7 @@ void HttpResponse::MakeResponse(Buffer &buff) {
     else if(!(mmFileStat_.st_mode & S_IROTH)){
         code_ = 408;
     }
-    else if(code == -1){
+    else if(code_ == -1){
         code_ = 200;
     }
     ErrorHtml_();
@@ -132,7 +132,7 @@ void HttpResponse::AddContent_(Buffer &buff) {
         ErrorContent(buff, "File NotFound!");
         return;
     }
-    mmFile_ = static_cast<char*>(mmRet);
+    mmFile_ = (char*)(mmRet);
     close(srcFd);
     buff.Append("Content-length: " + std::to_string(mmFileStat_.st_size) + "\r\n\r\n");
 }

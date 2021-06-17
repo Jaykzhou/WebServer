@@ -24,7 +24,7 @@ public:
                         pool->tasks.pop();
                         locker.unlock();
                         task();
-                        locker.lock()
+                        locker.lock();
                     }
                     else if(pool->isClosed){
                         break;
